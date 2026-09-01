@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { transition, canTransition, type Status } from "@/lib/subscription/machine";
-import { nextRetry, MAX_ATTEMPTS, RETRY_OFFSETS_H } from "@/lib/billing/retry";
+import { nextRetry, MAX_RETRIES, RETRY_OFFSETS_H } from "@/lib/billing/retry";
 
 function to(from: Status, trigger: Parameters<typeof transition>[1]) {
   const m = transition(from, trigger);
@@ -68,7 +68,7 @@ describe("subscription lifecycle", () => {
 describe("dunning", () => {
   it("spaces retries on the configured schedule", () => {
     const t0 = new Date("2026-03-01T00:00:00Z");
-    for (let i = 0; i < MAX_ATTEMPTS; i++) {
+    for (let i = 0; i < MAX_RETRIES; i++) {
       const d = nextRetry(i, t0);
       expect(d.action).toBe("retry");
       if (d.action !== "retry") return;
@@ -76,8 +76,8 @@ describe("dunning", () => {
     }
   });
 
-  it("gives up after the last attempt", () => {
-    expect(nextRetry(MAX_ATTEMPTS).action).toBe("give_up");
-    expect(nextRetry(MAX_ATTEMPTS + 4).action).toBe("give_up");
+  it("gives up once the retries are spent", () => {
+    expect(nextRetry(MAX_RETRIES).action).toBe("give_up");
+    expect(nextRetry(MAX_RETRIES + 4).action).toBe("give_up");
   });
 });
