@@ -83,11 +83,11 @@ export default async function Dashboard() {
       >
         <div className="machine">
           {STAGES.map((s, i) => (
-            <span key={s} style={{ display: "flex", alignItems: "center" }}>
-              {i > 0 && <span className="link" />}
-              <span className={"node" + (s === sub.status ? " on" : i < reached ? " done" : "")}>
-                {s.replace("_", " ")}
-              </span>
+            <span
+              key={s}
+              className={"node" + (s === sub.status ? " on" : i < reached ? " done" : "")}
+            >
+              {s.replace("_", " ")}
             </span>
           ))}
         </div>
@@ -96,58 +96,60 @@ export default async function Dashboard() {
 
       <div className="cols" style={{ marginTop: 34 }}>
         <div>
-          <dl className="kv">
-            <dt>Plan</dt>
-            <dd>
-              {plan.name} <span className="muted">at {fmt(plan.price)} a month</span>
-            </dd>
-            <dt>Status</dt>
-            <dd>
-              <span className={"pill " + (TONE[sub.status] ?? "")}>{sub.status}</span>
-            </dd>
-            <dt>Period</dt>
-            <dd className="num">
-              {short(sub.currentPeriodStart)}
-              <span className="arrow">to</span>
-              {short(sub.currentPeriodEnd)}
-            </dd>
-            {sub.trialEndsAt && sub.status === "trialing" && (
-              <>
-                <dt>Trial</dt>
-                <dd>
-                  {untilDays(sub.trialEndsAt)} days left, ends {short(sub.trialEndsAt)}
-                </dd>
-              </>
-            )}
-            {sub.failedPayments > 0 && (
-              <>
-                <dt>Declines</dt>
-                <dd className="num">
-                  {sub.failedPayments} of {TOTAL_ATTEMPTS}
-                </dd>
-              </>
-            )}
-            {sub.nextRetryAt && (
-              <>
-                <dt>Next try</dt>
-                <dd className="num">{stamp(sub.nextRetryAt)}</dd>
-              </>
-            )}
-            {sub.cancelAtPeriodEnd && (
-              <>
-                <dt>Ending</dt>
-                <dd>cancels on {short(sub.currentPeriodEnd)}</dd>
-              </>
-            )}
-            {sub.canceledAt && (
-              <>
-                <dt>Canceled</dt>
-                <dd className="num">{stamp(sub.canceledAt)}</dd>
-              </>
-            )}
-            <dt>Collected</dt>
-            <dd className="num">{fmt(collected)}</dd>
-          </dl>
+          <div className="card">
+            <dl className="kv">
+              <dt>Plan</dt>
+              <dd>
+                {plan.name} <span className="muted">at {fmt(plan.price)} a month</span>
+              </dd>
+              <dt>Status</dt>
+              <dd>
+                <span className={"pill " + (TONE[sub.status] ?? "")}>{sub.status}</span>
+              </dd>
+              <dt>Period</dt>
+              <dd className="num">
+                {short(sub.currentPeriodStart)}
+                <span className="arrow">to</span>
+                {short(sub.currentPeriodEnd)}
+              </dd>
+              {sub.trialEndsAt && sub.status === "trialing" && (
+                <>
+                  <dt>Trial</dt>
+                  <dd>
+                    {untilDays(sub.trialEndsAt)} days left, ends {short(sub.trialEndsAt)}
+                  </dd>
+                </>
+              )}
+              {sub.failedPayments > 0 && (
+                <>
+                  <dt>Declines</dt>
+                  <dd className="num">
+                    {sub.failedPayments} of {TOTAL_ATTEMPTS}
+                  </dd>
+                </>
+              )}
+              {sub.nextRetryAt && (
+                <>
+                  <dt>Next try</dt>
+                  <dd className="num">{stamp(sub.nextRetryAt)}</dd>
+                </>
+              )}
+              {sub.cancelAtPeriodEnd && (
+                <>
+                  <dt>Ending</dt>
+                  <dd>cancels on {short(sub.currentPeriodEnd)}</dd>
+                </>
+              )}
+              {sub.canceledAt && (
+                <>
+                  <dt>Canceled</dt>
+                  <dd className="num">{stamp(sub.canceledAt)}</dd>
+                </>
+              )}
+              <dt>Collected</dt>
+              <dd className="num">{fmt(collected)}</dd>
+            </dl>
+          </div>
 
           <div className="section">
             <div className="head">

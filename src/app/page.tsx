@@ -4,10 +4,7 @@ import { usingStripe, HANDLED } from "@/lib/stripe";
 export default function Home() {
   return (
     <main>
-      <h1>
-        Billing that survives
-        <br />a bad afternoon
-      </h1>
+      <h1>Billing that survives a bad afternoon</h1>
       <p className="lede">
         Ledger runs subscriptions on Stripe. The interesting part is not the checkout button, it is
         everything after it: duplicate webhooks, payments that land before the subscription they

@@ -1,24 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Instrument_Serif, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { DM_Sans, DM_Mono } from "next/font/google";
 import { usingStripe } from "@/lib/stripe";
 import "./globals.css";
 
-const display = Instrument_Serif({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--f-display",
-  display: "swap",
-});
-
-const sans = IBM_Plex_Sans({
+const sans = DM_Sans({
   weight: ["400", "500", "600"],
   subsets: ["latin"],
   variable: "--f-sans",
   display: "swap",
 });
 
-const mono = IBM_Plex_Mono({
+const mono = DM_Mono({
   weight: ["400", "500"],
   subsets: ["latin"],
   variable: "--f-mono",
@@ -32,7 +25,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
+    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
       <body>
         <header className="masthead">
           <div className="inner">
