@@ -10,3 +10,5 @@ next-env.d.ts
 *.db-journal
 
 .DS_Store
+
+.claude
