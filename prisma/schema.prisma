@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  name             String?
+  stripeCustomerId String   @unique
+  createdAt        DateTime @default(now())
+
+  subscriptions Subscription[]
+  invoices      Invoice[]
+  charges       Charge[]
+}
+
+model Subscription {
+  id                   String    @id @default(cuid())
+  stripeSubscriptionId String    @unique
+  customerId           String
+  plan                 String
+  status               String
+  trialEndsAt          DateTime?
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean   @default(false)
+  canceledAt           DateTime?
+  failedPayments       Int       @default(0)
+  nextRetryAt          DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  customer    Customer     @relation(fields: [customerId], references: [id])
+  invoices    Invoice[]
+  transitions Transition[]
+
+  @@index([status])
+}
+
+// Append-only audit of every state machine move. Makes past_due -> active
+// churn readable after the fact, which the subscription row alone can't show.
+model Transition {
+  id             String   @id @default(cuid())
+  subscriptionId String
+  from           String
+  to             String
+  reason         String
+  eventId        String?
+  at             DateTime @default(now())
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+
+  @@index([subscriptionId, at])
+}
+
+model Invoice {
+  id              String   @id @default(cuid())
+  stripeInvoiceId String   @unique
+  customerId      String
+  subscriptionId  String?
+  amountDue       Int
+  amountPaid      Int      @default(0)
+  currency        String   @default("usd")
+  status          String
+  attemptCount    Int      @default(0)
+  periodStart     DateTime
+  periodEnd       DateTime
+  createdAt       DateTime @default(now())
+
+  customer     Customer      @relation(fields: [customerId], references: [id])
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+  charges      Charge[]
+}
+
+model Charge {
+  id             String   @id @default(cuid())
+  stripeChargeId String   @unique
+  customerId     String
+  invoiceId      String?
+  amount         Int
+  currency       String   @default("usd")
+  status         String
+  description    String?
+  createdAt      DateTime @default(now())
+
+  // The exactly-once guard at the money layer. Two deliveries of the same
+  // Stripe event derive the same key, so the second insert throws instead of
+  // writing a second charge row.
+  idempotencyKey String @unique
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  invoice  Invoice? @relation(fields: [invoiceId], references: [id])
+}
+
+// Transport-layer dedupe. Primary key is Stripe's own event id, so a retry
+// storm collapses to one row no matter how many deliveries land.
+model WebhookEvent {
+  id            String    @id
+  type          String
+  status        String
+  payload       String
+  attempts      Int       @default(0)
+  deliveries    Int       @default(1)
+  error         String?
+  receivedAt    DateTime  @default(now())
+  processedAt   DateTime?
+
+  @@index([type, receivedAt])
+}
+
+// Outbound dedupe: keys we send to Stripe on create calls, so a retried
+// checkout POST reuses the session instead of opening a second one.
+model IdempotencyRecord {
+  key       String   @id
+  scope     String
+  result    String?
+  createdAt DateTime @default(now())
+}
