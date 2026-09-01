@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { stamp } from "@/lib/dates";
 import { HANDLED } from "@/lib/stripe";
+import Replay from "@/components/Replay";
 
 export const dynamic = "force-dynamic";
 
@@ -28,46 +29,44 @@ export default async function Events() {
     <main>
       <h1>Webhook log</h1>
       <p className="lede">
-        Every delivery that passed signature verification, in the order it arrived. Redeliveries do
-        not get their own row — they increment the delivery count on the row that already exists.
+        Every delivery that got past signature verification, newest first. A redelivery does not get
+        its own row. It bumps the count on the row that is already there.
       </p>
 
-      <div className="panel" style={{ marginTop: 22 }}>
-        <header>
-          <span className="label">Dedupe</span>
+      <div className="section">
+        <div className="head">
+          <h2>Dedupe</h2>
           <span className="label">
             {HANDLED.length} subscribed types, {chargeCount} charge rows written
           </span>
-        </header>
-        <div className="body">
-          <dl className="kv" style={{ gridTemplateColumns: "repeat(4, auto 1fr)" }}>
-            <dt>Deliveries</dt>
-            <dd className="num">{deliveries}</dd>
-            <dt>Unique</dt>
-            <dd className="num">{unique}</dd>
-            <dt>Suppressed</dt>
-            <dd className="num">{suppressed}</dd>
-            <dt>Failed</dt>
-            <dd className="num">{count("failed")}</dd>
-          </dl>
-          <p className="note">
-            {suppressed > 0
-              ? `${suppressed} repeat deliveries were dropped before reaching a handler.`
-              : "No repeat deliveries yet. Replay one and the count moves without a second charge."}
-          </p>
         </div>
+        <dl className="kv" style={{ gridTemplateColumns: "repeat(4, auto minmax(0, 1fr))", marginTop: 16 }}>
+          <dt>Deliveries</dt>
+          <dd className="num">{deliveries}</dd>
+          <dt>Unique</dt>
+          <dd className="num">{unique}</dd>
+          <dt>Dropped</dt>
+          <dd className="num">{suppressed}</dd>
+          <dt>Failed</dt>
+          <dd className="num">{count("failed")}</dd>
+        </dl>
+        <p className="note">
+          {suppressed > 0
+            ? `${suppressed} repeat deliveries were dropped before they reached a handler.`
+            : "Nothing has been redelivered yet. Replay a row below and watch the delivery count move without a second charge appearing."}
+        </p>
       </div>
 
-      <div className="panel" style={{ marginTop: 20 }}>
-        <header>
-          <span className="label">Recent</span>
+      <div className="section">
+        <div className="head">
+          <h2>Recent</h2>
           <span className="label">
-            {count("processed")} processed · {count("ignored")} ignored
+            {count("processed")} processed, {count("ignored")} ignored
           </span>
-        </header>
+        </div>
         <div className="scroll">
           {events.length === 0 ? (
-            <div className="empty">Nothing delivered yet.</div>
+            <p className="empty">Nothing has been delivered yet.</p>
           ) : (
             <table>
               <thead>
@@ -76,8 +75,9 @@ export default async function Events() {
                   <th>Type</th>
                   <th>Event</th>
                   <th className="r">Deliveries</th>
-                  <th className="r">Attempts</th>
-                  <th>State</th>
+                  <th className="r">Tries</th>
+                  <th className="r">State</th>
+                  <th className="r"></th>
                 </tr>
               </thead>
               <tbody>
@@ -90,13 +90,16 @@ export default async function Events() {
                     <td className="id">{e.id}</td>
                     <td className="r num">{e.deliveries}</td>
                     <td className="r num">{e.attempts}</td>
-                    <td>
+                    <td className="r">
                       <span className={"pill " + (TONE[e.status] ?? "")}>{e.status}</span>
                       {e.error && (
                         <div className="muted" style={{ fontSize: 11.5, marginTop: 3 }}>
                           {e.error}
                         </div>
                       )}
+                    </td>
+                    <td className="r">
+                      <Replay id={e.id} />
                     </td>
                   </tr>
                 ))}

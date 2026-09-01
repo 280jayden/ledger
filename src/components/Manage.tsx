@@ -30,7 +30,6 @@ export default function Manage({
     return keys.current.get(op)!;
   };
 
-  const done = keys.current;
   const canceled = status === "canceled";
 
   async function pick(next: PlanId) {
@@ -52,12 +51,11 @@ export default function Manage({
     });
     setBusy(false);
     if (!res.ok) {
-      setErr((await res.json()).error ?? "that did not work");
-      return false;
+      setErr((await res.json()).error ?? "that did not go through");
+      return;
     }
     setPreview(null);
     router.refresh();
-    return true;
   }
 
   const apply = () =>
@@ -70,10 +68,10 @@ export default function Manage({
 
   return (
     <div className="stack">
-      <div className="panel">
+      <div className="box">
         <header>
           <span className="label">Change plan</span>
-          <span className="label">prorated to the day</span>
+          <span className="label">prorated</span>
         </header>
         <div className="body">
           <div className="row">
@@ -84,7 +82,7 @@ export default function Manage({
             >
               {PLAN_IDS.map((id) => (
                 <option key={id} value={id}>
-                  {PLANS[id].name} — {fmt(PLANS[id].price)}/mo
+                  {PLANS[id].name}, {fmt(PLANS[id].price)}
                 </option>
               ))}
             </select>
@@ -98,13 +96,13 @@ export default function Manage({
           </div>
 
           {preview && (
-            <dl className="kv" style={{ marginTop: 14 }}>
+            <dl className="kv" style={{ marginTop: 16, gap: "5px 18px" }}>
               <dt>Unused</dt>
               <dd className="num">{fmtDelta(-preview.unusedCredit)}</dd>
               <dt>New plan</dt>
               <dd className="num">{fmtDelta(preview.newCharge)}</dd>
               <dt>Due now</dt>
-              <dd className="num" style={{ fontWeight: 600 }}>
+              <dd className="num" style={{ fontWeight: 500 }}>
                 {preview.dueNow >= 0 ? fmt(preview.dueNow) : `${fmt(-preview.dueNow)} credit`}
               </dd>
               <dt>Period left</dt>
@@ -113,13 +111,18 @@ export default function Manage({
           )}
 
           {err && <div className="err">{err}</div>}
+
+          <p className="note">
+            Credit for the time you did not use, charged for the time left on the new plan, both
+            worked out to the second rather than the day.
+          </p>
         </div>
       </div>
 
       {simulated && !canceled && (
-        <div className="panel">
+        <div className="box">
           <header>
-            <span className="label">Drive the billing clock</span>
+            <span className="label">Billing clock</span>
             <span className="mode">simulator</span>
           </header>
           <div className="body">
@@ -163,7 +166,7 @@ export default function Manage({
         </div>
       )}
 
-      <div className="panel">
+      <div className="box">
         <header>
           <span className="label">Cancel</span>
         </header>
@@ -184,14 +187,9 @@ export default function Manage({
                 post(`/api/subscription/${subscriptionId}/cancel`, { atPeriodEnd: false })
               }
             >
-              Immediately
+              Right now
             </button>
           </div>
-          {done.size > 0 && (
-            <p className="note">
-              {done.size} idempotency {done.size === 1 ? "key" : "keys"} issued this session.
-            </p>
-          )}
         </div>
       </div>
     </div>

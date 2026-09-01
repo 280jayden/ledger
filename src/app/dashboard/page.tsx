@@ -47,11 +47,11 @@ export default async function Dashboard() {
   if (!customer || !sub || !isPlanId(sub.plan)) {
     return (
       <main>
-        <h1>No subscription yet</h1>
+        <h1>Nothing to show yet</h1>
         <p className="lede">
           Start a trial from the <Link href="/">plans page</Link> and this becomes the operator view
-          for it: current state, every transition that got you there, invoices, and the controls to
-          upgrade or cancel.
+          for it: what state the subscription is in, every transition that got it there, the
+          invoices behind those transitions, and the controls to change plan or cancel.
         </p>
       </main>
     );
@@ -68,104 +68,105 @@ export default async function Dashboard() {
     .reduce((n, c) => n + c.amount, 0);
 
   const reached = STAGES.indexOf(sub.status as (typeof STAGES)[number]);
+  const plan = PLANS[sub.plan];
 
   return (
     <main>
-      <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
-        <h1>{customer.email}</h1>
+      <h1>Subscription</h1>
+      <p className="lede" style={{ marginTop: 10 }}>
+        {customer.email}
+      </p>
+
+      <div
+        className="row"
+        style={{ justifyContent: "space-between", marginTop: 26, gap: 20 }}
+      >
+        <div className="machine">
+          {STAGES.map((s, i) => (
+            <span key={s} style={{ display: "flex", alignItems: "center" }}>
+              {i > 0 && <span className="link" />}
+              <span className={"node" + (s === sub.status ? " on" : i < reached ? " done" : "")}>
+                {s.replace("_", " ")}
+              </span>
+            </span>
+          ))}
+        </div>
         <span className="id">{sub.stripeSubscriptionId}</span>
       </div>
 
-      <div className="machine" style={{ margin: "18px 0 26px" }}>
-        {STAGES.map((s, i) => (
-          <span key={s} style={{ display: "flex", alignItems: "center" }}>
-            {i > 0 && <span className="link" />}
-            <span
-              className={"node" + (s === sub.status ? " on" : i < reached ? " done" : "")}
-              title={s === sub.status ? "current state" : undefined}
-            >
-              {s.replace("_", " ")}
-            </span>
-          </span>
-        ))}
-      </div>
-
-      <div className="cols">
-        <div className="stack">
-          <div className="panel">
-            <header>
-              <span className="label">Subscription</span>
+      <div className="cols" style={{ marginTop: 34 }}>
+        <div>
+          <dl className="kv">
+            <dt>Plan</dt>
+            <dd>
+              {plan.name} <span className="muted">at {fmt(plan.price)} a month</span>
+            </dd>
+            <dt>Status</dt>
+            <dd>
               <span className={"pill " + (TONE[sub.status] ?? "")}>{sub.status}</span>
-            </header>
-            <div className="body">
-              <dl className="kv">
-                <dt>Plan</dt>
+            </dd>
+            <dt>Period</dt>
+            <dd className="num">
+              {short(sub.currentPeriodStart)}
+              <span className="arrow">to</span>
+              {short(sub.currentPeriodEnd)}
+            </dd>
+            {sub.trialEndsAt && sub.status === "trialing" && (
+              <>
+                <dt>Trial</dt>
                 <dd>
-                  {PLANS[sub.plan].name} <span className="muted">— {fmt(PLANS[sub.plan].price)}/mo</span>
+                  {untilDays(sub.trialEndsAt)} days left, ends {short(sub.trialEndsAt)}
                 </dd>
-                <dt>Period</dt>
+              </>
+            )}
+            {sub.failedPayments > 0 && (
+              <>
+                <dt>Declines</dt>
                 <dd className="num">
-                  {short(sub.currentPeriodStart)} <span className="arrow">→</span>{" "}
-                  {short(sub.currentPeriodEnd)}
+                  {sub.failedPayments} of {TOTAL_ATTEMPTS}
                 </dd>
-                {sub.trialEndsAt && sub.status === "trialing" && (
-                  <>
-                    <dt>Trial</dt>
-                    <dd>
-                      {untilDays(sub.trialEndsAt)} days left, ends {short(sub.trialEndsAt)}
-                    </dd>
-                  </>
-                )}
-                {sub.failedPayments > 0 && (
-                  <>
-                    <dt>Declines</dt>
-                    <dd className="num">
-                      {sub.failedPayments} of {TOTAL_ATTEMPTS}
-                    </dd>
-                  </>
-                )}
-                {sub.nextRetryAt && (
-                  <>
-                    <dt>Next try</dt>
-                    <dd className="num">{stamp(sub.nextRetryAt)}</dd>
-                  </>
-                )}
-                {sub.cancelAtPeriodEnd && (
-                  <>
-                    <dt>Ending</dt>
-                    <dd>cancels {short(sub.currentPeriodEnd)}</dd>
-                  </>
-                )}
-                {sub.canceledAt && (
-                  <>
-                    <dt>Canceled</dt>
-                    <dd className="num">{stamp(sub.canceledAt)}</dd>
-                  </>
-                )}
-                <dt>Collected</dt>
-                <dd className="num">{fmt(collected)}</dd>
-              </dl>
-            </div>
-          </div>
+              </>
+            )}
+            {sub.nextRetryAt && (
+              <>
+                <dt>Next try</dt>
+                <dd className="num">{stamp(sub.nextRetryAt)}</dd>
+              </>
+            )}
+            {sub.cancelAtPeriodEnd && (
+              <>
+                <dt>Ending</dt>
+                <dd>cancels on {short(sub.currentPeriodEnd)}</dd>
+              </>
+            )}
+            {sub.canceledAt && (
+              <>
+                <dt>Canceled</dt>
+                <dd className="num">{stamp(sub.canceledAt)}</dd>
+              </>
+            )}
+            <dt>Collected</dt>
+            <dd className="num">{fmt(collected)}</dd>
+          </dl>
 
-          <div className="panel">
-            <header>
-              <span className="label">Invoices</span>
-              <span className="label">{sub.invoices.length} total</span>
-            </header>
+          <div className="section">
+            <div className="head">
+              <h2>Invoices</h2>
+              <span className="label">{sub.invoices.length} raised</span>
+            </div>
             <div className="scroll">
               {sub.invoices.length === 0 ? (
-                <div className="empty">Nothing billed yet. Trials do not raise an invoice.</div>
+                <p className="empty">Nothing billed yet. A trial does not raise an invoice.</p>
               ) : (
                 <table>
                   <thead>
                     <tr>
                       <th>Invoice</th>
-                      <th>Period</th>
-                      <th className="r">Attempts</th>
+                      <th>Period from</th>
+                      <th className="r">Tries</th>
                       <th className="r">Due</th>
                       <th className="r">Paid</th>
-                      <th>State</th>
+                      <th className="r">State</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -176,7 +177,7 @@ export default async function Dashboard() {
                         <td className="r num">{inv.attemptCount}</td>
                         <td className="r num">{fmt(inv.amountDue)}</td>
                         <td className="r num">{fmt(inv.amountPaid)}</td>
-                        <td>
+                        <td className="r">
                           <span className={"pill " + (TONE[inv.status] ?? "")}>{inv.status}</span>
                         </td>
                       </tr>
@@ -187,22 +188,22 @@ export default async function Dashboard() {
             </div>
           </div>
 
-          <div className="panel">
-            <header>
-              <span className="label">Charges</span>
-              <span className="label">keyed by invoice and attempt</span>
-            </header>
+          <div className="section">
+            <div className="head">
+              <h2>Charge attempts</h2>
+              <span className="label">one row per invoice attempt</span>
+            </div>
             <div className="scroll">
               {charges.length === 0 ? (
-                <div className="empty">No charge attempts recorded.</div>
+                <p className="empty">No charge has been attempted.</p>
               ) : (
                 <table>
                   <thead>
                     <tr>
                       <th>Idempotency key</th>
                       <th className="r">Amount</th>
-                      <th>State</th>
-                      <th>When</th>
+                      <th className="r">State</th>
+                      <th className="r">When</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -210,10 +211,10 @@ export default async function Dashboard() {
                       <tr key={c.id}>
                         <td className="id">{c.idempotencyKey}</td>
                         <td className="r num">{fmt(c.amount)}</td>
-                        <td>
+                        <td className="r">
                           <span className={"pill " + (TONE[c.status] ?? "")}>{c.status}</span>
                         </td>
-                        <td className="num">{stamp(c.createdAt)}</td>
+                        <td className="r num">{stamp(c.createdAt)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -222,28 +223,26 @@ export default async function Dashboard() {
             </div>
           </div>
 
-          <div className="panel">
-            <header>
-              <span className="label">State transitions</span>
+          <div className="section">
+            <div className="head">
+              <h2>How it got here</h2>
               <Link href="/dashboard/events" className="label">
-                webhook log →
+                webhook log
               </Link>
-            </header>
-            <div className="body">
-              <ul className="timeline">
-                {sub.transitions.map((t) => (
-                  <li key={t.id}>
-                    <time>{stamp(t.at)}</time>
-                    <span>
-                      <span className="mono">{t.from}</span>
-                      <span className="arrow">→</span>
-                      <span className="mono">{t.to}</span>{" "}
-                      <span className="muted">{t.reason}</span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
             </div>
+            <ul className="timeline">
+              {sub.transitions.map((t) => (
+                <li key={t.id}>
+                  <time>{stamp(t.at)}</time>
+                  <span>
+                    <span className="mono">{t.from}</span>
+                    <span className="arrow">to</span>
+                    <span className="mono">{t.to}</span>{" "}
+                    <span className="muted">{t.reason}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
