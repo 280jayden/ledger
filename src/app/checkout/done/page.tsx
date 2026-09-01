@@ -18,29 +18,27 @@ export default async function Done({
     <main>
       <h1>Trial started</h1>
       <p className="lede">
-        {TRIAL_DAYS} days, no charge yet. Stripe has already sent the checkout and subscription
-        events, and both have been applied.
+        {TRIAL_DAYS} days, nothing charged. The checkout and subscription events have already been
+        delivered and applied.
       </p>
 
-      <div className="panel" style={{ marginTop: 22, maxWidth: 560 }}>
-        <header>
-          <span className="label">Checkout session</span>
-        </header>
-        <div className="body">
-          <dl className="kv">
-            <dt>Session</dt>
-            <dd className="id">{session ?? "unknown"}</dd>
-            <dt>Key</dt>
-            <dd className="id">{record?.key ?? "not recorded"}</dd>
-          </dl>
-          <p className="note">
-            Reloading this page will not create anything. The key above is spent, and a second
-            request carrying it gets this same session back.
-          </p>
+      <div className="section" style={{ maxWidth: 560 }}>
+        <div className="head">
+          <h2>Checkout session</h2>
         </div>
+        <dl className="kv" style={{ marginTop: 16 }}>
+          <dt>Session</dt>
+          <dd className="id">{session ?? "unknown"}</dd>
+          <dt>Key</dt>
+          <dd className="id">{record?.key ?? "not recorded"}</dd>
+        </dl>
+        <p className="note">
+          Reloading this page creates nothing. That key is spent, and any request carrying it again
+          gets this same session back.
+        </p>
       </div>
 
-      <p style={{ marginTop: 24 }}>
+      <p style={{ marginTop: 30 }}>
         <Link href="/dashboard" className="btn primary">
           Open the subscription
         </Link>

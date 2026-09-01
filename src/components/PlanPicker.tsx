@@ -43,30 +43,32 @@ export default function PlanPicker() {
               <h2>{p.name}</h2>
               <div className="price">
                 {fmt(p.price)}
-                <small> / mo</small>
+                <small> /mo</small>
               </div>
-              <div className="label">{p.blurb}</div>
+              <p className="blurb">{p.blurb}</p>
               <ul>
                 {p.features.map((f) => (
                   <li key={f}>{f}</li>
                 ))}
               </ul>
-              <button
-                onClick={() => setPlan(id)}
-                className={plan === id ? "primary" : ""}
-                disabled={plan === id}
-              >
-                {plan === id ? "Selected" : "Select"}
-              </button>
+              <div>
+                <button
+                  onClick={() => setPlan(id)}
+                  className={plan === id ? "primary" : ""}
+                  disabled={plan === id}
+                >
+                  {plan === id ? "Selected" : `Pick ${p.name}`}
+                </button>
+              </div>
             </div>
           );
         })}
       </div>
 
-      <div className="panel" style={{ marginTop: 20 }}>
+      <div className="box" style={{ marginTop: 26 }}>
         <header>
           <span className="label">Start a {TRIAL_DAYS} day trial</span>
-          <span className="label">no card in simulator mode</span>
+          <span className="label">no card needed in simulator mode</span>
         </header>
         <div className="body">
           <div className="row">
@@ -76,19 +78,20 @@ export default function PlanPicker() {
               placeholder="you@company.com"
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !busy && start()}
-              style={{ minWidth: 260 }}
+              style={{ minWidth: 250 }}
             />
             <button className="primary" onClick={start} disabled={busy || !email}>
               {busy ? "Working" : `Start on ${PLANS[plan].name}`}
             </button>
-            <span className="muted" style={{ fontSize: 13 }}>
-              {fmt(PLANS[plan].price)}/mo after the trial
+            <span className="muted" style={{ fontSize: 13.5 }}>
+              then {fmt(PLANS[plan].price)} a month
             </span>
           </div>
           {err && <div className="err">{err}</div>}
           <p className="note">
-            Checkout is keyed on a client generated idempotency key. Submitting twice returns the
-            original session, so a jumpy connection cannot open two subscriptions on one card.
+            The form generates one idempotency key and reuses it. Submit twice and the second
+            request gets the original session back, so a jumpy connection cannot open two
+            subscriptions against the same card.
           </p>
         </div>
       </div>
